@@ -1,0 +1,4 @@
+.idea/
+src/__pycache__/
+src/different_result.csv
+src/same_result0.csv
