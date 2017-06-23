@@ -1,11 +1,10 @@
 from sklearn import model_selection, preprocessing
 import xgboost as xgb
+import numpy as np
+
 N_THREAD = 4
 
-
-def predict(train,test):
-    id_test = test.id
-
+def predict(train, test, y_target):
     mult = .969
 
     y_train = train["price_doc"] * mult + 10
@@ -34,15 +33,19 @@ def predict(train,test):
         'eval_metric': 'rmse',
         'silent': 1
     }
-
+    y_train = np.log(y_train+1)
+    y_target = np.log(y_target+1)
     dtrain = xgb.DMatrix(x_train, y_train)
-    dtest = xgb.DMatrix(x_test)
+    dtest = xgb.DMatrix(x_test, y_target)
 
+    watchlist = [(dtrain, 'train'), (dtest, 'eval')]
     num_boost_rounds = 385  # This was the CV output, as earlier version shows
-    #cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,
+    # cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,
     #                   verbose_eval=10, show_stdv=False)
 
-    model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds)
 
-    y_predict = model.predict(dtest)
+    model = xgb.train(dict(xgb_params, silent=1), dtrain, evals= watchlist, num_boost_round=num_boost_rounds)
+    #y_predict = model.predict(dtest)
+
+    y_predict = np.exp(model.predict(dtest))-1
     return y_predict

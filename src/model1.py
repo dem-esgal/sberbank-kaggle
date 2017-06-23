@@ -1,10 +1,12 @@
 import pandas as pd
+import numpy as np
+
 from sklearn import model_selection, preprocessing
 import xgboost as xgb
+
 N_THREAD = 4
 
-def predict(train,test):
-
+def predict(train, test, y_target):
     # Add month-year
     month_year = (train.timestamp.dt.month * 30 + train.timestamp.dt.year * 365)
     month_year_cnt_map = month_year.value_counts().to_dict()
@@ -42,7 +44,6 @@ def predict(train,test):
 
     train['room_size'] = train['life_sq'] / train['num_room'].astype(float)
     test['room_size'] = test['life_sq'] / test['num_room'].astype(float)
-
 
     rate_2015_q2 = 1
     rate_2015_q1 = rate_2015_q2 / 0.9932
@@ -180,13 +181,18 @@ def predict(train,test):
         'silent': 1
     }
 
+    y_train = np.log(y_train+1)
+    y_target = np.log(y_target+1)
+
     dtrain = xgb.DMatrix(x_train, y_train)
-    dtest = xgb.DMatrix(x_test)
+    dtest = xgb.DMatrix(x_test, y_target)
+    watchlist = [(dtrain, 'train'), (dtest, 'eval')]
 
-    num_boost_rounds = 422#500
-    #cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,
+    num_boost_rounds = 422  # 500
+    # cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,
     #                   verbose_eval=10, show_stdv=False)
-    model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds)
 
-    y_predict = model.predict(dtest)
+    model = xgb.train(dict(xgb_params, silent=1), dtrain, evals= watchlist, num_boost_round=num_boost_rounds)
+    #y_predict = model.predict(dtest)
+    y_predict = np.exp(model.predict(dtest))-1
     return y_predict
