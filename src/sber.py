@@ -17,8 +17,6 @@ import pandas as pd
 
 # load files
 import src.utils as utils
-import src.model_i as modeli
-import src.model_ni as modelni
 import src.model1 as model1
 
 train = pd.read_csv('../input/train.csv', parse_dates=['timestamp'])
@@ -102,7 +100,7 @@ result = pd.DataFrame({'id': test.id, 'price_doc': y_predict})
 #.032 - result
 #result.to_csv('result.csv', index=False)
 # - model1 0.31684
-result.to_csv('result_model1.csv', index=False)
+result.to_csv('result_yar.csv', index=False)
 #0.   43
 '''
 y_predict = model1.predict(train, test)
