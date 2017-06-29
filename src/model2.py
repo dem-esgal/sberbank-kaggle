@@ -40,9 +40,7 @@ def predict(train, test, y_target):
 
     watchlist = [(dtrain, 'train'), (dtest, 'eval')]
     num_boost_rounds = 385  # This was the CV output, as earlier version shows
-    # cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,
-    #                   verbose_eval=10, show_stdv=False)
-
+    # cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,  verbose_eval=10, show_stdv=False)
 
     model = xgb.train(dict(xgb_params, silent=1), dtrain, evals= watchlist, num_boost_round=num_boost_rounds)
     #y_predict = model.predict(dtest)

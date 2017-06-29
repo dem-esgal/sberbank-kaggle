@@ -3,9 +3,9 @@ import numpy as np
 
 from sklearn import model_selection, preprocessing
 import xgboost as xgb
-MILLION_W = 0.7
+MILLION_W = 0.3
 MILLION2_W = 0.3
-MILLION3_W = 0.2
+MILLION3_W = 0.3
 N_THREAD = 4
 
 def predict(train, test, y_target=None):
@@ -46,6 +46,10 @@ def predict(train, test, y_target=None):
 
     train['room_size'] = train['life_sq'] / train['num_room'].astype(float)
     test['room_size'] = test['life_sq'] / test['num_room'].astype(float)
+    train['kremlin_sq'] = np.sqrt(train['kremlin_km'])
+    test['kremlin_sq'] = np.sqrt(test['kremlin_km'])
+
+
     #########################################################################################################
 
     train['price_doc'] = train['price_doc']
@@ -71,34 +75,35 @@ def predict(train, test, y_target=None):
 
     xgb_params = {
         'nthread': N_THREAD,
-        'eta': 0.02,
-        'max_depth': 5,
+        'eta': 0.03,
+        'max_depth': 4,
         'subsample': 0.7,
-        'colsample_bytree': 1,
+        'colsample_bytree': 0.7,
         'objective': 'reg:linear',
         'eval_metric': 'rmse',
         'silent': 1,
         'seed':420,
     }
+    #0.39
     is_avoider = np.logical_and((y_train > 980000), (y_train <= 1e6))
     wts = 1 - MILLION_W * (is_avoider) - MILLION2_W * (y_train == 2e6) - MILLION3_W * (y_train == 3e6)
-    num_boost_rounds = 700  # 500
+    num_boost_rounds = 300  # 500
 
-    y_train = np.log(y_train+1)
+    #y_train = np.log(y_train+1)
     if y_target is not None:
-        y_target = np.log(y_target+1)
+    #    y_target = np.log(y_target+1)
         dtrain = xgb.DMatrix(x_train, y_train, weight=wts)
         dtest = xgb.DMatrix(x_test, y_target)
         model = xgb.train(dict(xgb_params, silent=1), dtrain, evals= [(dtrain, 'train'), (dtest, 'eval')], num_boost_round=num_boost_rounds)
     else:
         dtrain = xgb.DMatrix(x_train, y_train, weight=wts)
         dtest = xgb.DMatrix(x_test)
-        model = xgb.train(dict(xgb_params, silent=1), dtrain,num_boost_round=num_boost_rounds)
+        model = xgb.train(dict(xgb_params, silent=1), dtrain, num_boost_round=num_boost_rounds)
 
     #watchlist =
 
     #cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,   verbose_eval=10, show_stdv=False)
 
-    #y_predict = model.predict(dtest)
-    y_predict = np.exp(model.predict(dtest))-1
+    y_predict = model.predict(dtest)
+    #y_predict = np.exp(model.predict(dtest))-1
     return y_predict

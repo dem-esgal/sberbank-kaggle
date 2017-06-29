@@ -4,7 +4,7 @@ import numpy as np
 from sklearn import model_selection, preprocessing
 import xgboost as xgb
 MILLION_W = 0.7
-MILLION2_W = 0.3
+MILLION2_W = 0.33
 MILLION3_W = 0.2
 N_THREAD = 4
 
@@ -72,8 +72,8 @@ def predict(train, test, y_target=None):
     xgb_params = {
         'nthread': N_THREAD,
         'eta': 0.02,
-        'max_depth': 5,
-        'subsample': 0.7,
+        'max_depth': 4,
+        'subsample': 0.8,
         'colsample_bytree': 1,
         'objective': 'reg:linear',
         'eval_metric': 'rmse',
@@ -99,6 +99,6 @@ def predict(train, test, y_target=None):
 
     #cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200,   verbose_eval=10, show_stdv=False)
 
-    #y_predict = model.predict(dtest)
+    y_predict = model.predict(dtest)
     y_predict = np.exp(model.predict(dtest))-1
     return y_predict
