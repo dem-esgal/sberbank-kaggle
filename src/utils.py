@@ -109,13 +109,13 @@ def shift_logmean_but_keep_scale(  # Or change the scale, but relative to the ol
     return np.exp(newlogs)
 
 def split(T):
-    T1, T2 = train_test_split(T, random_state=420, train_size=0.8 )
-    return T1, T2
-    #T["yearmonth"] = T["timestamp"].dt.year * 100 + T["timestamp"].dt.month
-    #val_time = 201407
-    #dev_indices = np.where(T["yearmonth"] < val_time)
-    #val_indices = np.where(T["yearmonth"] >= val_time)
-    #return T.loc[dev_indices], T.loc[val_indices]
+    #T1, T2 = train_test_split(T, random_state=420, train_size=0.8 )
+    #return T1, T2
+    T["yearmonth"] = T["timestamp"].dt.year * 100 + T["timestamp"].dt.month
+    val_time = 201407
+    dev_indices = np.where(T["yearmonth"] < val_time)
+    val_indices = np.where(T["yearmonth"] >= val_time)
+    return T.loc[dev_indices], T.loc[val_indices]
 
 
 def rmsle(h, y):

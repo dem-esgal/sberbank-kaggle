@@ -35,17 +35,30 @@ def predict(train, test, y_target=None):
     test['dow'] = test.timestamp.dt.dayofweek
 
     # Other feature engineering
-    train['rel_floor'] = train['floor'] / train['max_floor'].astype(float)
-    train['rel_kitch_sq'] = train['kitch_sq'] / train['full_sq'].astype(float)
+    train['rel_floor'] = 0.05 + train['floor'] / train['max_floor'].astype(float)
+    train['rel_kitch_sq'] = 0.05 + train['kitch_sq'] / train['full_sq'].astype(float)
 
-    test['rel_floor'] = test['floor'] / test['max_floor'].astype(float)
-    test['rel_kitch_sq'] = test['kitch_sq'] / test['full_sq'].astype(float)
+    test['rel_floor'] = 0.05 + test['floor'] / test['max_floor'].astype(float)
+    test['rel_kitch_sq'] = 0.05 + test['kitch_sq'] / test['full_sq'].astype(float)
+    #0.328934
 
-    train.apartment_name = train.sub_area + train['metro_km_avto'].astype(str)
-    test.apartment_name = test.sub_area + train['metro_km_avto'].astype(str)
+    #train.apartment_name = train.sub_area + train['metro_min_rn'].astype(str)
+    #test.apartment_name = test.sub_area + train['metro_min_rn'].astype(str)
 
     train['room_size'] = train['life_sq'] / train['num_room'].astype(float)
     test['room_size'] = test['life_sq'] / test['num_room'].astype(float)
+
+    train['area_per_room'] = train['life_sq'] / train['num_room'].astype(float)  # rough area per room
+    train['livArea_ratio'] = train['life_sq'] / train['full_sq'].astype(float)  # rough living area
+    train['gender_ratio'] = train['male_f'] / train['female_f'].astype(float)
+    train['lifesq_x_state'] = train['life_sq'] * train['state'].astype(float)  # life_sq times the state of the place
+    train['floor_x_state'] = train['floor'] * train['state'].astype(float)  # relative floor * the state of the place
+
+    test['area_per_room'] = test['life_sq'] / test['num_room'].astype(float)
+    test['livArea_ratio'] = test['life_sq'] / test['full_sq'].astype(float)
+    test['gender_ratio'] = test['male_f'] / test['female_f'].astype(float)
+    test['lifesq_x_state'] = test['life_sq'] * test['state'].astype(float)
+    test['floor_x_state'] = test['floor'] * test['state'].astype(float)
     #########################################################################################################
 
     train['price_doc'] = train['price_doc']
@@ -80,7 +93,7 @@ def predict(train, test, y_target=None):
         'silent': 1,
         'seed':420,
     }
-    is_avoider = np.logical_and((y_train > 980000), (y_train <= 1e6))
+    is_avoider = np.logical_and((y_train > 990000), (y_train <= 1e6))
     wts = 1 - MILLION_W * (is_avoider) - MILLION2_W * (y_train == 2e6) - MILLION3_W * (y_train == 3e6)
     num_boost_rounds = 700  # 500
 

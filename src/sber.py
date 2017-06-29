@@ -29,25 +29,29 @@ train, test = utils.clearData(train, test)
 '''
 train, test = utils.split(train)
 y_target = pd.DataFrame({'id': test.id, 'price_doc': test.price_doc})
-test = test.dropna(subset=['price_doc'])
+
 test_v_i = test[test["product_type"] == "Investment"]
 test_v_ni = test[test["product_type"] != "Investment"]
 
 million_1 = test_v_i[(test_v_i.price_doc > 990000) & (test_v_i.price_doc <= 1010000)]
-UNDERSAMPLE = 3.2
+UNDERSAMPLE = 3
 
-million_1 = million_1.sample(round(10*million_1.shape[0]/10))
+million_1 = million_1.sample(round(UNDERSAMPLE*million_1.shape[0]/10))
 million_2 = test_v_i[test_v_i.price_doc == 2e6]
-million_2 = million_2.sample(round(10*million_2.shape[0]/10))
+million_2 = million_2.sample(round(UNDERSAMPLE*million_2.shape[0]/10))
 million_3 = test_v_i[test_v_i.price_doc == 3e6]
-million_3 = million_3.sample(round(10*million_3.shape[0]/10))
+million_3 = million_3.sample(round(UNDERSAMPLE*million_3.shape[0]/10))
 nonmillion= test_v_i[((test_v_i.price_doc <= 990000) | (test_v_i.price_doc > 1010000)) & (test_v_i.price_doc != 2e6) & (test_v_i.price_doc != 3e6)]
-nonmillion = nonmillion.sample(round(6.6*nonmillion.shape[0]/10))
+#nonmillion = nonmillion.sample(round(6.6*nonmillion.shape[0]/10))
 
 test_v_i = pd.concat([million_1, million_2, million_3, nonmillion], axis=0)
 
 test = pd.concat([test_v_ni, test_v_i])
+test = test.dropna(subset=['price_doc'])
+train = train.dropna(subset=['price_doc'])
 
+y_target = pd.DataFrame({'id': test.id, 'price_doc': test.price_doc})
+test.drop(['price_doc'], axis=1, inplace=True)
 print(test.shape)
 '''
 #y_target = pd.DataFrame({'id': test.id, 'price_doc': test.price_doc})
