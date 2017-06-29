@@ -1,7 +1,14 @@
 import numpy as np
+from sklearn.cross_validation import train_test_split
+import scipy as sp
 
 def clearData(train, test):
     # clean data
+    bad_index = train[train.kremlin_km<0.08].index
+    train.loc[bad_index, "kremlin_km"] = np.NaN
+    bad_index = test[test.kremlin_km<0.08].index
+    test.loc[bad_index, "kremlin_km"] = np.NaN
+
     bad_index = train[train.life_sq > train.full_sq].index
     train.loc[bad_index, "life_sq"] = np.NaN
     equal_index = [601, 1896, 2791]
@@ -75,3 +82,41 @@ def clearData(train, test):
     train = train[train.price_doc / train.full_sq <= 600000]
     train = train[train.price_doc / train.full_sq >= 10000]
     return train, test
+
+def scale_miss(  # Scale shifted logs and compare raw stdev to old raw stdev
+        alpha,
+        shifted_logs,
+        oldstd,
+        new_logmean
+):
+    newlogs = new_logmean + alpha * (shifted_logs - new_logmean)
+    newstd = np.std(np.exp(newlogs))
+    return (newstd - oldstd) ** 2
+
+
+def shift_logmean_but_keep_scale(  # Or change the scale, but relative to the old scale
+        data,
+        new_logmean,
+        rescaler
+):
+    logdata = np.log(data)
+    oldstd = data.std()
+    shift = new_logmean - logdata.mean()
+    shifted_logs = logdata + shift
+    scale = sp.optimize.leastsq(scale_miss, 1, args=(shifted_logs, oldstd, new_logmean))
+    alpha = scale[0][0]
+    newlogs = new_logmean + rescaler * alpha * (shifted_logs - new_logmean)
+    return np.exp(newlogs)
+
+def split(T):
+    #T1, T2 = train_test_split(T, random_state=420, train_size=0.8 )
+    #return T1, T2
+    T["yearmonth"] = T["timestamp"].dt.year * 100 + T["timestamp"].dt.month
+    val_time = 201407
+    dev_indices = np.where(T["yearmonth"] < val_time)
+    val_indices = np.where(T["yearmonth"] >= val_time)
+    return T.loc[dev_indices], T.loc[val_indices]
+
+
+def rmsle(h, y):
+    return np.sqrt(np.square(np.log(h+1) - np.log(y+1)).mean())

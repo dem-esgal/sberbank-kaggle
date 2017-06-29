@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+
 N_THREAD = 4
 
-
-def predict(train, test, df_train, df_test, df_macro):
-
+def predict(train, test, df_train, df_test, y_target, df_macro):
     df_train.drop(df_train[df_train["life_sq"] > 7000].index, inplace=True)
 
     mult = 0.969
@@ -99,8 +98,8 @@ def predict(train, test, df_train, df_test, df_macro):
 
     xgb_params = {
         'nthread': N_THREAD,
-        'eta': 0.05,
-        'max_depth': 5,
+        'eta': 0.04,
+        'max_depth': 4,
         'subsample': 0.7,
         'colsample_bytree': 0.7,
         'objective': 'reg:linear',
@@ -108,12 +107,17 @@ def predict(train, test, df_train, df_test, df_macro):
         'silent': 1
     }
 
+    y_train = np.log(y_train+1)
+    y_target = np.log(y_target+1)
+
     dtrain = xgb.DMatrix(X_train, y_train, feature_names=df_columns)
-    dtest = xgb.DMatrix(X_test, feature_names=df_columns)
+    dtest = xgb.DMatrix(X_test, y_target, feature_names=df_columns)
+    watchlist = [(dtrain, 'train'), (dtest, 'eval')]
 
-    num_boost_rounds = 420  # From Bruno's original CV, I think
+    num_boost_rounds = 400  # From Bruno's original CV, I think
     #cv_output = xgb.cv(xgb_params, dtrain, num_boost_round=1000, early_stopping_rounds=200, verbose_eval=10, show_stdv=False)
-    model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds)
+    model = xgb.train(dict(xgb_params, silent=1), dtrain, evals= watchlist, num_boost_round=num_boost_rounds)
+    #y_predict = model.predict(dtest)
 
-    y_pred = model.predict(dtest)
-    return y_pred
+    y_predict = np.exp(model.predict(dtest))-1
+    return y_predict
